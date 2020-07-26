@@ -25,12 +25,13 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
         w2v_key = list(str(k) for k in w2v_dic.item().keys())
         w2v_result = pd.DataFrame(w2v_mat, index=w2v_key)
 
-
     # Download meta_dict, meta_mat
     if os.path.isfile(path_dict['meta_data_path']):
         meta_df = pd.read_pickle(path_dict['meta_data_path'])
     else:
-        meta_df = download_data_from_s3('flo-tmp', 'database/flo_tmp/tmp_meta')
+        bucket = path_dict['hive_meta_path']['bucket']
+        key = f"database/{path_dict['hive_meta_path']['database']}/{path_dict['hive_meta_path']['table']}"
+        meta_df = download_data_from_s3(bucket, key)
         meta_df.to_pickle(path_dict['meta_data_path'])
 
     meta_df = meta_df.set_index('track_id')
@@ -51,9 +52,10 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
     if os.path.isfile(path_dict['train_data_path']):
         train_tmp = pd.read_pickle(path_dict['train_data_path'])
     else:
-        train_tmp = download_data_from_s3('flo-tmp', 'database/flo_tmp/tmp_train')
+        bucket = path_dict['hive_train_path']['bucket']
+        key = f"database/{path_dict['hive_train_path']['database']}/{path_dict['hive_train_path']['table']}"
+        train_tmp = download_data_from_s3(bucket, key)
         train_tmp.to_pickle(path_dict['train_data_path'])
-
     train_tmp = pd.read_pickle(path_dict['train_data_path'])
 
     # Download inference data
@@ -61,14 +63,18 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
     if os.path.isfile(path_dict['infer_data_path']):
         infer_tmp = pd.read_pickle(path_dict['infer_data_path'])
     else:
-        infer_tmp = download_data_from_s3('flo-tmp', 'database/flo_tmp/tmp_infer')
+        bucket = path_dict['hive_infer_path']['bucket']
+        key = f"database/{path_dict['hive_infer_path']['database']}/{path_dict['hive_infer_path']['table']}"
+        infer_tmp = download_data_from_s3(bucket, key)
         infer_tmp.to_pickle(path_dict['infer_data_path'])
     infer_tmp = pd.read_pickle(path_dict['infer_data_path'])
     
     
     # simple test
-    train_tmp = train_tmp.head(300000)
-    infer_tmp = infer_tmp.head(300000)
+    mode = os.environ('PROD', 0)
+    if mode == 0:
+        train_tmp = train_tmp.head(300000)
+        infer_tmp = infer_tmp.head(300000)
     
     embedding['w2v_vector'] = w2v_result
     embedding['meta_vector'] = meta_result

@@ -1,4 +1,4 @@
-app_name: 'pyspark_data_preprocess_test'
+app_name: 'pyspark_data_preprocess_prod'
 
 epochs: 1
 verboses: 0
@@ -13,6 +13,9 @@ score_threshold: 0.6
 track_cnt_threshold: 30
 
 system_logging: 40
+
+candidates_path: '/data01/candidates.gz'
+candidates_file: 'candidates.gz'
 
 w2v_dic_path: 'data_w2v/w2v.dic.npy'
 w2v_mat_path: 'data_w2v/w2v.mat.npy'

@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     print('#####' * 10)
     print('start to upload metric to memCache...')
-    bucket = 'flo-tmp'
-    key = 'database/flo_tmp/tmp_metric'
+    bucket = cf_config['hive']['metric']['bucket']
+    key = f"database/{cf_config['hive']['metric']['database']}/{cf_config['hive']['metric']['table']}"
     s3_mc_for_metric(bucket, key, memCache_ip, memCache_port)
     print('end to upload metric to memCache...')

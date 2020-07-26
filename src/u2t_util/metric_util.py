@@ -198,11 +198,8 @@ def u2t_metric(x_play_test, x_skip_test, y_play_test, character_test, u2t_model,
     return result
 
 
-def u2t_metric_upload(metric_result):
-    metric_bucket = 'flo-tmp'
-    metric_key = 'database/flo_tmp/tmp_metric'
-    
-    res = upload_metric_data_to_s3(metric_result, metric_bucket, metric_key)
+def u2t_metric_upload(metric_result, bucket, key):
+    res = upload_metric_data_to_s3(metric_result, bucket, key)
     if res:
         print('Metric Upload To S3 Succeeded...')
     else:
@@ -212,8 +209,7 @@ def u2t_metric_upload(metric_result):
 def s3_mc_for_metric(bucket, key, m_ip, m_port):
     from pymemcache.client import Client
 
-    key_ = f'database/flo_tmp/{key}'
-    data = download_json_from_s3(bucket, key_)
+    data = download_json_from_s3(bucket, key)
 
     data_ = dict()
     data_['model_nm'] = json.dumps(data['model_nm'])

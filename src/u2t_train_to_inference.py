@@ -38,6 +38,11 @@ if __name__ == '__main__':
     track_cnt_threshold = cf_config['track_cnt_threshold']
     
     path_dict = {
+        's3_path'         : cf_config['s3'],
+        'hive_train_path' : cf_config['hive']['train'],
+        'hive_infer_path' : cf_config['hive']['infer'],
+        'hive_meta_path'  : cf_config['hive']['meta'],
+        'hive_metric_path': cf_config['hive']['metric'],
         'w2v_dic_path'    : cf_config['w2v_dic_path'],
         'w2v_mat_path'    : cf_config['w2v_mat_path'],
         'meta_dic_path'   : cf_config['meta_dic_path'],
@@ -101,9 +106,10 @@ if __name__ == '__main__':
     print('start to upload *.npy...')
     latest_npy = [os.path.basename(i) for i in glob.glob(os.path.join(path_dict['demo_data_path'], '*.npy'))]
     for npy_files in latest_npy:
-        key = f'model/user2track/latest/{npy_files}'
-        res = upload_file_to_s3(os.path.join(path_dict['demo_data_path'], npy_files), 'flo-tmp', key)
-        print(f'upload... flo-tmp/{key} --> {npy_files}')
+        bucket = path_dict['s3_path']['bucket']
+        key = f"{path_dict['s3_path']['key']}/latest/{npy_files}"
+        res = upload_file_to_s3(os.path.join(path_dict['demo_data_path'], npy_files), bucket, key)
+        print(f"upload... {bucket}/{key} --> {npy_files}")
     print('end to upload *.npy...')
     
     print('#####' * 10)
@@ -114,8 +120,9 @@ if __name__ == '__main__':
     
     print('#####' * 10)
     print('start to upload candidates.json...')
-    # from u2t_util.aws_util import upload_file_to_s3, export_npy
-
+    bucket = path_dict['s3_path']['bucket']
+    key = f"{path_dict['s3_path']['key']}/latest/{cf_config['candidates_file']}"
+    res = upload_file_to_s3(cf_config['candidates_path'], bucket, key)
     print('end to upload candidates.json...')
     
     print('#####' * 10)
@@ -126,5 +133,7 @@ if __name__ == '__main__':
 
     print('#####' * 10)
     print('start to upload metric...')
-    u2t_metric_upload(metric_result)
+    bucket = path_dict['hive_metric_path']['bucket']
+    key = f"database/{path_dict['hive_metric_path']['database']}/{path_dict['hive_metric_path']['table']}"
+    u2t_metric_upload(metric_result, bucket, key)
     print('end to upload metric')

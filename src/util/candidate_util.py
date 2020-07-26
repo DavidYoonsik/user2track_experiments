@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 import json
 
-from src.model import u2t_pred_inference
+from src.model.create_topk_model import u2t_pred_inference
 
 
 def u2t_candidates(x_play_infer, x_skip_infer, character_infer, u2t_model, session, track_index, index_to_track, top_k):

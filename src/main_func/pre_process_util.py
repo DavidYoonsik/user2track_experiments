@@ -7,11 +7,12 @@ import tensorflow as tf
 from collections import Counter, defaultdict
 from sklearn.preprocessing import normalize
 
+from src.util.aws_util import download_w2v_from_s3, download_data_from_s3
+
 
 def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
     embedding = dict()
     # Download w2v_dic, w2v_mat .npy file
-    from src.util.aws_util import download_w2v_from_s3
     if os.path.isfile(path_dict['w2v_dic_path']) and os.path.isfile(path_dict['w2v_mat_path']):
         w2v_dic = np.load(path_dict['w2v_dic_path'], allow_pickle=True)
         w2v_mat = normalize(np.load(path_dict['w2v_mat_path'], allow_pickle=True))
@@ -26,7 +27,6 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
 
 
     # Download meta_dict, meta_mat
-    from src.util.aws_util import download_data_from_s3
     if os.path.isfile(path_dict['meta_data_path']):
         meta_df = pd.read_pickle(path_dict['meta_data_path'])
     else:
@@ -47,7 +47,6 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
     meta_result = pd.DataFrame(meta_mat, index=meta_key)
     
     # Download train data
-    from src.util.aws_util import download_data_from_s3
     train_tmp = None
     if os.path.isfile(path_dict['train_data_path']):
         train_tmp = pd.read_pickle(path_dict['train_data_path'])

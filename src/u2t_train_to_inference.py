@@ -3,7 +3,16 @@ import argparse
 import os
 import glob
 import tensorflow as tf
+
 from tensorflow.keras import backend as K
+
+from src.util.aws_util import export_npy, upload_file_to_s3
+from src.main_func.inference_util import u2t_inference
+from src.main_func.pre_process_util import prep_dataset
+from src.main_func.train_util import u2t_train
+from src.util.candidate_util import u2t_candidates
+from src.util.conf_util import init_config
+from src.util.metric_util import u2t_metric, u2t_metric_upload
 
 np.random.seed(7)
 unk_track = '<UKN>'
@@ -15,8 +24,6 @@ if __name__ == '__main__':
     parser.add_argument('--config_path', '-c', help='e.g., ./config.yml', required=True)
     args = parser.parse_args()
     print(args.yyyymmdd, args.config_path)
-    
-    from src.util.conf_util import init_config
     
     cf_config = init_config(args.config_path)
     tf.compat.v1.logging.set_verbosity(cf_config['system_logging'])
@@ -45,7 +52,7 @@ if __name__ == '__main__':
 
     print('#####' * 10)
     print('start to prepare data-set...')
-    from src.util import prep_dataset
+    
     
     train_dt, test_dt, infer_dt, freq_prob, track_index, \
     embedding, track_to_index, index_to_track = prep_dataset(path_dict, track_cnt_threshold, data_max_length,
@@ -58,7 +65,6 @@ if __name__ == '__main__':
 
     print('#####' * 10)
     print('start to train...')
-    from src.util import u2t_train
     u2t_model, train_generator, validation_generator, callbacks = u2t_train(x_play_train, x_skip_train, y_play_train,
                                                                             x_play_test, x_skip_test, y_play_test,
                                                                             track_index, batch_size, num_inputs,
@@ -77,15 +83,12 @@ if __name__ == '__main__':
 
     print('#####' * 10)
     print('start to inference...')
-    from src.util import u2t_inference
     user_vector_, track_vector, track_bias = u2t_inference(x_play_infer, x_skip_infer, character_infer, u2t_model,
                                                            K.get_session(), index_to_track)
     print('end to inference...')
 
     print('#####' * 10)
     print('start to save *.npy...')
-    from src.util.aws_util import export_npy, upload_file_to_s3
-    
     export_npy(track_vector[1:], list(index_to_track.values())[1:],
                os.path.join(os.path.join(path_dict['demo_data_path'], 'item_weight')))
     export_npy(track_bias[1:], list(index_to_track.values())[1:],
@@ -105,25 +108,23 @@ if __name__ == '__main__':
     
     print('#####' * 10)
     print('start to generate candidates.json...')
-    from src.util import u2t_candidates
     u2t_candidates(x_play_infer, x_skip_infer, character_infer, u2t_model, K.get_session(), track_index,
                    index_to_track, top_k)
     print('end to generate candidates.json...')
     
     print('#####' * 10)
     print('start to upload candidates.json...')
-    from src.util.aws_util import upload_file_to_s3
+    from src.util.aws_util import upload_file_to_s3, export_npy
+
     print('end to upload candidates.json...')
     
     print('#####' * 10)
     print('start to generate metric...')
-    from src.util.metric_util import u2t_metric
     metric_result = u2t_metric(x_play_test, x_skip_test, y_play_test, character_test, u2t_model, K.get_session(),
                                track_index, top_k)
     print('end to generate metric...')
 
     print('#####' * 10)
     print('start to upload metric...')
-    from src.util.metric_util import u2t_metric_upload
     u2t_metric_upload(metric_result)
     print('end to upload metric')

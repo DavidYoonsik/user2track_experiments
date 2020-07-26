@@ -2,7 +2,8 @@ import json
 import boto3
 import numpy as np
 
-from src.model import u2t_pred_inference
+from src.model.create_topk_model import u2t_pred_inference
+from src.util.aws_util import download_json_from_s3
 
 
 def upload_metric_data_to_s3(data, bucket, key):
@@ -209,7 +210,6 @@ def u2t_metric_upload(metric_result):
 
 
 def s3_mc_for_metric(bucket, key, m_ip, m_port):
-    from src.util.aws_util import download_json_from_s3
     from pymemcache.client import Client
 
     key_ = f'database/flo_tmp/{key}'

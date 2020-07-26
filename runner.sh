@@ -31,7 +31,7 @@ case ${TASK_NAME} in
     ;;
   train)
     YYYYMMDD=${TASK_ARGS[0]}
-    python3 scr/u2t_train_to_inference.py --config $CONFIG_FILE --yyyymmdd $YYYYMMDD
+    python3 src/u2t_train_to_inference.py --config $CONFIG_FILE --yyyymmdd $YYYYMMDD
     ;;
   upload)
     YYYYMMDD=${TASK_ARGS[0]}

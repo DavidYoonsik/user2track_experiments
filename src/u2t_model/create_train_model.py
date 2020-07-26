@@ -23,12 +23,9 @@ def user2track_model(num_inputs, num_outputs, neg_k, embedding, track_index, lr)
     
     x_play_cf_flatten = tf.keras.layers.Conv1D(filters=256, kernel_size=100, padding='same', activation=tf.nn.relu)(
             x_play_cf_flatten_i)
-    print(x_play_cf_flatten.shape)
     
     x_play_cf_flatten = tf.keras.layers.Conv1D(filters=256, kernel_size=100, padding='same', activation=tf.nn.relu)(
             x_play_cf_flatten)
-    
-    print(x_play_cf_flatten.shape)
     
     x_play_cf_flatten = tf.keras.layers.Dropout(0.5)(x_play_cf_flatten)
     x_play_cf_flatten = tf.keras.layers.MaxPooling1D(pool_size=5, padding='same')(x_play_cf_flatten)

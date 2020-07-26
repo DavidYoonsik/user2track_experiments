@@ -1,0 +1,57 @@
+app_name: 'pyspark_data_preprocess_test'
+
+epochs: 1
+verboses: 1
+batch_size: 512
+lr: 0.0005
+num_inputs: 100
+num_outputs: 300
+neg_k: 5
+top_k: 500
+early_stop: True
+score_threshold: 0.6
+track_cnt_threshold: 30
+
+system_logging: 40
+
+w2v_dic_path: 'data_w2v/w2v.dic.npy'
+w2v_mat_path: 'data_w2v/w2v.mat.npy'
+
+meta_dic_path: 'data_meta/meta.dic.npy'
+meta_mat_path: 'data_meta/meta.mat.npy'
+
+infer_data_path: 'data/infer_tmp'
+train_data_path: 'data/train_tmp'
+meta_data_path: 'data/meta_tmp'
+
+demo_data_path: 'data_demo/'
+
+s3:
+  bucket: 'flo-tmp'
+  key: 'model/user2track'
+
+hive:
+  train:
+    bucket: 'flo-tmp'
+    database: 'flo_tmp'
+    table: 'tmp_train'
+  infer:
+    bucket: 'flo-tmp'
+    database: 'flo_tmp'
+    table: 'tmp_infer'
+  gt:
+    bucket: 'flo-tmp'
+    database: 'flo_tmp'
+    table: 'tmp_gt'
+  metric:
+    bucket: 'flo-tmp'
+    database: 'flo_tmp'
+    table: 'tmp_metric'
+  meta:
+    bucket: 'flo-tmp'
+    database: 'flo_tmp'
+    table: 'tmp_meta'
+
+memcache:
+  ip: '10.180.2.236'
+  port: 11211

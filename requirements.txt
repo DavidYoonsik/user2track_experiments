@@ -1,0 +1,14 @@
+setuptools>=42.0.2
+tensorflow-gpu==1.15.0
+pyspark==2.4.3
+numpy==1.17.1
+pandas==0.25.1
+tqdm==4.35.0
+scipy==1.2.0
+pyarrow==0.13.0
+PyYAML==5.1.2
+awscli==1.16.309
+boto3==1.9.225
+botocore==1.12.225
+pymemcache==3.0.1
+scikit-learn==0.20.3

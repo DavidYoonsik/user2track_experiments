@@ -1,0 +1,10 @@
+.git
+.gitignore
+.dockerignore
+README.md
+
+checkpoint/*
+.python-version
+**/*.pyc
+**/__pycache__
+**/.*.swp

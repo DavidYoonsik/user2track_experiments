@@ -1,0 +1,12 @@
+# ignore all files in the build/ directory
+data/*
+data_meta/*
+data_w2v/*
+checkpoint/*
+output/*
+tb_output/*
+
+*.pyc
+__pycache__
+DS_Store
+*.whl

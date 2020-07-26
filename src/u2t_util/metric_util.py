@@ -2,8 +2,8 @@ import json
 import boto3
 import numpy as np
 
-from src.model.create_topk_model import u2t_pred_inference
-from src.util.aws_util import download_json_from_s3
+from u2t_model.create_topk_model import u2t_pred_inference
+from u2t_util.aws_util import download_json_from_s3
 
 
 def upload_metric_data_to_s3(data, bucket, key):

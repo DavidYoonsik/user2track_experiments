@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-from src.generator.data_generator import DataGenerator
-from src.model.create_train_model import user2track_model
+from u2t_generator.data_generator import DataGenerator
+from u2t_model.create_train_model import user2track_model
 
 np.random.seed(7)
 

@@ -1,7 +1,7 @@
 import argparse
 
-from src.util.conf_util import init_config
-from src.util.metric_util import s3_mc_for_metric
+from u2t_util.conf_util import init_config
+from u2t_util.metric_util import s3_mc_for_metric
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

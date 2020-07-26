@@ -7,7 +7,7 @@ import tensorflow as tf
 from collections import Counter, defaultdict
 from sklearn.preprocessing import normalize
 
-from src.util.aws_util import download_w2v_from_s3, download_data_from_s3
+from u2t_util.aws_util import download_w2v_from_s3, download_data_from_s3
 
 
 def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):

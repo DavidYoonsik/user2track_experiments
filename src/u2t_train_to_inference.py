@@ -6,13 +6,13 @@ import tensorflow as tf
 
 from tensorflow.keras import backend as K
 
-from src.util.aws_util import export_npy, upload_file_to_s3
-from src.main_func.inference_util import u2t_inference
-from src.main_func.pre_process_util import prep_dataset
-from src.main_func.train_util import u2t_train
-from src.util.candidate_util import u2t_candidates
-from src.util.conf_util import init_config
-from src.util.metric_util import u2t_metric, u2t_metric_upload
+from u2t_util.aws_util import export_npy, upload_file_to_s3
+from u2t_main_func.inference_util import u2t_inference
+from u2t_main_func.pre_process_util import prep_dataset
+from u2t_main_func.train_util import u2t_train
+from u2t_util.candidate_util import u2t_candidates
+from u2t_util.conf_util import init_config
+from u2t_util.metric_util import u2t_metric, u2t_metric_upload
 
 np.random.seed(7)
 unk_track = '<UKN>'
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     
     print('#####' * 10)
     print('start to upload candidates.json...')
-    from src.util.aws_util import upload_file_to_s3, export_npy
+    # from u2t_util.aws_util import upload_file_to_s3, export_npy
 
     print('end to upload candidates.json...')
     

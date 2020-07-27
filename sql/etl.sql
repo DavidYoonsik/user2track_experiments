@@ -5,9 +5,7 @@ SELECT
     character_id,
     track_id,
     (real_play_time / full_play_time) as rpt,
-    SUBSTR(yyyymmdd, 1, 4) as year_,
-    SUBSTR(yyyymmdd, 5, 2) as month_,
-    FLOOR(CAST(SUBSTR(yyyymmdd, 7, 2) as BIGINT) / 7 + 1) as day_
+    yyyymmdd as dt
 FROM flo_log.listen_log
 WHERE yyyymmdd >= ${ST}
 AND yyyymmdd <= ${ET}
@@ -38,7 +36,7 @@ FROM (
         lr.character_id,
         cast(lr.track_id as string) as track_id,
         lr.rpt,
-        concat(concat(lr.year_, lr.month_), concat('0', lr.day_)) as dt
+        lr.dt
     FROM listenraw as lr
 ) t1
 JOIN (
@@ -68,10 +66,11 @@ SELECT
     character_no,
     track_id,
     CASE
-        WHEN rpt > 0.3 THEN 'Y'
+        WHEN rpt > 0.5 THEN 'Y'
         ELSE 'N'
     END as 1min_yn,
-    dt
+    dt,
+    row_number() over (partition by character_no, dt order by dt desc) as sub_seq
 FROM (
     SELECT
         character_id as character_no,
@@ -82,8 +81,8 @@ FROM (
     WHERE character_id is not null
     AND track_id is not null
 )
-GROUP BY character_no, track_id, rpt, dt
-SORT BY dt
+group by character_no, track_id, rpt, 1min_yn, dt
+SORT BY character_no, dt
 ;
 
 DROP TABLE IF EXISTS ${OUTPUT_DATABASE}.${OUTPUT_META_TABLE};
@@ -172,7 +171,8 @@ SELECT
     character_no,
     track_id,
     1min_yn,
-    dt
+    dt,
+    sub_seq
 FROM listenpoint
 ORDER BY dt DESC
 ;
@@ -187,7 +187,11 @@ SELECT
     character_no,
     dt,
     row_number() OVER (PARTITION BY character_no ORDER BY dt) as seq
-FROM preprocstep1
+FROM (
+    SELECT *
+    FROM preprocstep1
+    WHERE 1min_yn = 'Y'
+    AND sub_seq < 50)
 GROUP BY character_no, dt
 ORDER BY character_no, seq
 ;
@@ -211,8 +215,8 @@ FROM (
     FROM preprocstep2 t1
     JOIN preprocstep2 t1_
     ON t1.character_no = t1_.character_no)
-WHERE seq_diff > -5
-AND seq_diff <= 2
+WHERE seq_diff > -7
+AND seq_diff < 3
 ;
 
 CREATE OR REPLACE TEMPORARY VIEW preprocstep4 AS
@@ -226,7 +230,6 @@ FROM preprocstep1 t1
 JOIN preprocstep3 t3
 ON t1.character_no = t3.character_no
 AND t1.dt = t3.dt_
-SORT BY t3.dt
 ;
 
 DROP VIEW preprocstep1;
@@ -288,69 +291,6 @@ WHERE t1.x_play is not null
 ORDER BY t1.character_no
 );
 
--- GT
-DROP TABLE IF EXISTS ${OUTPUT_DATABASE}.${OUTPUT_GT_TABLE};
-CREATE EXTERNAL TABLE IF NOT EXISTS ${OUTPUT_DATABASE}.${OUTPUT_GT_TABLE} (
-    character_no STRING,
-    x_play_tracks STRING,
-    y_dt_list STRING
-)
-COMMENT 'user2track inference dataset (character_no: user_id, y_play_tracks: G.T, y_dt: G.T DateList)'
-STORED AS ORC
-LOCATION 's3://${OUTPUT_BUCKET}/database/${OUTPUT_DATABASE}/${OUTPUT_GT_TABLE}'
-TBLPROPERTIES ('orc.compress' = 'SNAPPY');
-
-INSERT OVERWRITE TABLE ${OUTPUT_DATABASE}.${OUTPUT_GT_TABLE} (
-SELECT
-    character_no,
-    concat_ws('|', collect_list(concat_ws(':', track_id, play_cnt))) as x_play_tracks,
-    concat_ws('|', ref_dt_list) as y_dt_list
-FROM (
-    SELECT
-        t1.character_no,
-        t2.ref_dt_list,
-        t1.track_id,
-        count(*) as play_cnt
-    FROM (
-        SELECT
-            character_no,
-            1min_yn,
-            track_id,
-            seq_diff,
-            dt
-        FROM preprocstep4) t1
-    JOIN (
-        SELECT
-            t2_0.character_no,
-            t2_0.recent_dt,
-            t2_1.ref_dt_list
-        FROM (
-            SELECT
-                character_no,
-                max(dt) as recent_dt
-            FROM preprocstep3
-            GROUP BY character_no) t2_0
-        JOIN (
-            SELECT
-                character_no,
-                dt,
-                collect_set(dt_) as ref_dt_list
-            FROM preprocstep3
-            WHERE mark = 'prev'
-            GROUP BY character_no, dt) t2_1
-        ON (t2_0.character_no = t2_1.character_no)
-        AND (t2_0.recent_dt = t2_1.dt)) t2
-    ON t1.character_no = t2.character_no
-    AND t1.dt = t2.recent_dt
-    WHERE (t1.mark = 'prev')
-    AND (t1.1min_yn = 'Y')
-    GROUP BY t1.character_no, t2.ref_dt_list, t1.track_id
-    DISTRIBUTE BY character_no
-    SORT BY character_no, play_cnt DESC) t3
-GROUP BY character_no, ref_dt_list
-ORDER BY character_no
-);
-
 DROP VIEW preprocstep3;
 
 -- TRAIN
@@ -378,9 +318,9 @@ FROM (
     FROM (
         SELECT
             *,
-            concat_ws('|', slice(prev_play_t, 1, 100)) as x_play,
-            concat_ws('|', slice(prev_skip_t, 1, 100)) as x_skip,
-            concat_ws('|', slice(next_play_t, 1, 100)) as y_play
+            concat_ws('|', prev_play_t) as x_play,
+            concat_ws('|', prev_skip_t) as x_skip,
+            concat_ws('|', next_play_t) as y_play
         FROM (
             SELECT
                 t1_0.character_no,
@@ -393,33 +333,33 @@ FROM (
                 SELECT
                     character_no,
                     dt,
-                    collect_list(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END) as prev_play_t,
-                    collect_list(CASE WHEN 1min_yn = 'N' THEN track_id ELSE null END) as prev_skip_t,
+                    slice(collect_list(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END), 1, 100) as prev_play_t,
+                    slice(collect_list(CASE WHEN 1min_yn = 'N' THEN track_id ELSE null END), 1, 100) as prev_skip_t,
                     SIZE(collect_set(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END)) as unique_listens
                 FROM (
                     SELECT *
                     FROM preprocstep4
                     WHERE mark = 'prev'
-                    DISTRIBUTE BY character_no, dt)
+                    ORDER BY dt ASC)
                     GROUP BY character_no, dt) t1_0
-                JOIN (
-                    SELECT
-                        character_no,
-                        dt,
-                        collect_list(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END) as next_play_t
-                    FROM (
-                        SELECT *
-                        FROM preprocstep4
-                        WHERE mark = 'next'
-                        DISTRIBUTE BY character_no, dt)
-                    GROUP BY character_no, dt) t1_1
-                ON (t1_0.character_no = t1_1.character_no) AND (t1_0.dt = t1_1.dt)
-            WHERE unique_listens > ${UNIQ_LISTEN})
+            JOIN (
+                SELECT
+                    character_no,
+                    dt,
+                    slice(collect_list(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END), 1, 100) as next_play_t
+                FROM (
+                    SELECT *
+                    FROM preprocstep4
+                    WHERE mark = 'next'
+                    ORDER BY dt ASC)
+                GROUP BY character_no, dt) t1_1
+            ON (t1_0.character_no = t1_1.character_no) AND (t1_0.dt = t1_1.dt)
+        WHERE unique_listens > ${UNIQ_LISTEN})
     ) t1
     WHERE t1.x_play is not null
     AND t1.y_play is not null)
-WHERE char_cnt < 15
-LIMIT 4000000
+WHERE char_cnt < 5
+LIMIT 6000000
 );
 
 DROP VIEW preprocstep4;

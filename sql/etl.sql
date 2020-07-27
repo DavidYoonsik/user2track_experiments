@@ -5,6 +5,10 @@ SELECT
     character_id,
     track_id,
     real_play_time,
+    (real_play_time / full_play_time) as rpt,
+    SUBSTR(yyyymmdd, 1, 4) as year,
+    SUBSTR(yyyymmdd, 5, 2) as month,
+    FLOOR(CAST(SUBSTR(yyyymmdd, 7, 2) as BIGINT) / 7 + 1) as day,
     yyyymmdd
 FROM flo_log.listen_log
 WHERE yyyymmdd >= ${ST}
@@ -33,11 +37,13 @@ SELECT
     t1.dt
 FROM (
     SELECT
-        character_id,
-        cast(track_id as string) as track_id,
-        real_play_time,
-        yyyymmdd as dt
-    FROM listenraw
+        lr.character_id,
+        lr.cast(track_id as string) as track_id,
+        lr.real_play_time,
+        lr.rpt,
+        lr.yyyymmdd,
+        CONCAT(CONCAT(lr.year, lr.month), CONCAT('0', l1.day) as dt
+    FROM listenraw as lr
 ) t1
 JOIN (
     SELECT m1.track_id, m1.rep_track_id
@@ -67,22 +73,24 @@ SELECT
     character_no,
     track_id,
     CASE
-        WHEN real_play_time > 60 THEN 'Y'
+        WHEN rpt > 0.3 THEN 'Y'
         ELSE 'N'
     END as 1min_yn,
-    real_play_time,
-    dt
+    dt,
+    MAX(yyyymmdd) as yyyymmdd
 FROM (
     SELECT
         character_id as character_no,
         track_id,
         real_play_time,
-        dt
+        rpt,
+        dt,
+        yyyymmdd
     FROM listenraw_
     WHERE character_id is not null
-    AND real_play_time > 0
+    AND track_id is not null
 )
-GROUP BY character_no, track_id, real_play_time, dt
+GROUP BY character_no, track_id, rpt, dt
 SORT BY dt
 ;
 
@@ -172,7 +180,8 @@ SELECT
     character_no,
     track_id,
     1min_yn,
-    dt
+    dt,
+    yyyymmdd
 FROM listenpoint
 ORDER BY dt DESC
 ;
@@ -199,7 +208,7 @@ SELECT
     dt_,
     seq_diff,
     CASE
-        WHEN seq_diff <= 0 THEN 'prev'
+        WHEN seq_diff < 0 THEN 'prev'
         ELSE 'next'
     END as mark
 FROM (
@@ -366,7 +375,7 @@ STORED AS ORC
 LOCATION 's3://${OUTPUT_BUCKET}/database/${OUTPUT_DATABASE}/${OUTPUT_TRAIN_TABLE}'
 TBLPROPERTIES ('orc.compress' = 'SNAPPY');
 
-INSERT OVERWRITE TABLE ${OUTPUT_DATABASE}.${OUTPUT_TRAIN_TABLE}(
+INSERT OVERWRITE TABLE ${OUTPUT_DATABASE}.${OUTPUT_TRAIN_TABLE} (
 SELECT character_no, x_play, x_skip, y_play
 FROM (
     SELECT
@@ -417,8 +426,8 @@ FROM (
     ) t1
     WHERE t1.x_play is not null
     AND t1.y_play is not null)
-WHERE char_cnt
-LIMIT 6000000
+WHERE char_cnt < 30
+LIMIT 4000000
 );
 
 DROP VIEW preprocstep4;

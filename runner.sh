@@ -10,7 +10,7 @@ PROD=${PROD:-0}
 
 # debugging
 if [ $PROD -eq 1 ]; then
-  CONFIG_FILE=res/config.real.yaml
+  CONFIG_FILE=res/config.prod.yaml
 else
   CONFIG_FILE=res/config.dev.yaml
 fi

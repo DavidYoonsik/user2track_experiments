@@ -1,15 +1,15 @@
 app_name: 'pyspark_data_preprocess_prod'
 
 epochs: 1
-verboses: 0
+verboses: 1
 batch_size: 512
-lr: 0.0005
+lr: 0.001
 num_inputs: 100
 num_outputs: 300
 neg_k: 5
 top_k: 500
 early_stop: True
-score_threshold: 0.6
+score_threshold: 0.9
 track_cnt_threshold: 30
 
 system_logging: 40

@@ -71,7 +71,7 @@ def prep_dataset(path_dict, track_cnt_threshold, data_max_length, unk_track):
     
     
     # simple test
-    mode = os.environ('PROD', 0)
+    mode = int(os.environ.get('PROD', 0))
     if mode == 0:
         train_tmp = train_tmp.head(300000)
         infer_tmp = infer_tmp.head(300000)

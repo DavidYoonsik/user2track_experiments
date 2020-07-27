@@ -29,6 +29,7 @@ if __name__ == '__main__':
     tf.compat.v1.logging.set_verbosity(cf_config['system_logging'])
     epochs = cf_config['epochs']
     verboses = cf_config['verboses']
+    early_stop = cf_config['early_stop']
     batch_size = cf_config['batch_size']
     lr = cf_config['lr']
     num_inputs = cf_config['num_inputs']
@@ -73,7 +74,8 @@ if __name__ == '__main__':
     u2t_model, train_generator, validation_generator, callbacks = u2t_train(x_play_train, x_skip_train, y_play_train,
                                                                             x_play_test, x_skip_test, y_play_test,
                                                                             track_index, batch_size, num_inputs,
-                                                                            num_outputs, neg_k, lr, embedding, freq_prob)
+                                                                            num_outputs, neg_k, lr, embedding,
+                                                                            freq_prob, early_stop)
     
     hist = u2t_model.fit_generator(
             generator=train_generator,

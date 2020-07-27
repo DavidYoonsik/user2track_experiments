@@ -8,7 +8,7 @@ num_inputs: 100
 num_outputs: 300
 neg_k: 5
 top_k: 500
-early_stop: True
+early_stop: False
 score_threshold: 0.9
 track_cnt_threshold: 30
 

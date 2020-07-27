@@ -1,33 +1,32 @@
 # CF USER2TRACK README
 
 ## data
-- train.npz (train, test, inference 3분류 데이터셋 저장)
+- 학습 데이터, 테스트 데이터, 추론 데이터, 메타 데이터, Track2Track 데이터, G.T 데이터
+- 업로드에 필요한 데이터(*.npy, candidates.gz, etc,.)
 
 ## src
-- dataset.py (spark-sql)
-- func_utils.py, layer_utils.py
-- base_layer.py, conv1d_layer.py, conv2d_layer.py
-- train.py (학습 & 추론)
-- s3_to_memcached.py (학습 및 추론 결과물 S3 업로드 / 개별적 업로드 기능)
+- 데이터 처리, 학습, 추론 및 결과물 업로드(s3) 과정을 End-to-End 구성
+- metric 수치 결과 upload(s3 --> memCache)
 
 ## res
-- config.dev.yaml, config.real.yaml
+- config.dev.yaml, config.prod.yaml
 - install-python.sh
 
 ## sql
 - etl.sh
 - etl.sql
 
-## flow
-- 학습을 위한 데이터 생성
-- S3 업로드
-- 학습 단계에서 S3 데이터셋 로드
-- 학습 진행
-- 결과물(체크포인트, 모델 및 메타 데이터) S3 업로드
-- (옵션) tb_output/ 경로로 Tensorboard 실행 후, 학습 히스토리 및 모델 그래프 확인
-- 추론 진행
-- 결과물(.npy) S3 업로드
-- DEMO 페이지 결과 비교(이전 모델) 및 확인
+## *.npy, candidates.gz upload
+- flo-tmp/model/user2track/latest/*.npy
+- flo-tmp/model/user2track/latest/candidates.gz
+
+## external volume
+- MCP-GPU01 서버 내에서 디스크 공간 이슈를 해결하기 위해서
+- /data01 디렉토리를 상대적으로 용량이 큰 데이터를 저장하는 경로로 사용
+
+## Tensorboard 경로
+- MCP-GPU01 서버
+- http://172.21.74.111:9006
 
 ## run(PROD=0 for TEST, PROD=1 for REAL)
 ```

@@ -4,12 +4,10 @@ CREATE OR REPLACE TEMPORARY VIEW listenraw AS
 SELECT
     character_id,
     track_id,
-    real_play_time,
     (real_play_time / full_play_time) as rpt,
-    SUBSTR(yyyymmdd, 1, 4) as year,
-    SUBSTR(yyyymmdd, 5, 2) as month,
-    FLOOR(CAST(SUBSTR(yyyymmdd, 7, 2) as BIGINT) / 7 + 1) as day,
-    yyyymmdd
+    SUBSTR(yyyymmdd, 1, 4) as year_,
+    SUBSTR(yyyymmdd, 5, 2) as month_,
+    FLOOR(CAST(SUBSTR(yyyymmdd, 7, 2) as BIGINT) / 7 + 1) as day_
 FROM flo_log.listen_log
 WHERE yyyymmdd >= ${ST}
 AND yyyymmdd <= ${ET}
@@ -33,16 +31,14 @@ CREATE OR REPLACE TEMPORARY VIEW listenraw_ AS
 SELECT
     t1.character_id,
     t2.rep_track_id as track_id,
-    t1.real_play_time,
+    t1.rpt,
     t1.dt
 FROM (
     SELECT
         lr.character_id,
-        lr.cast(track_id as string) as track_id,
-        lr.real_play_time,
+        cast(lr.track_id as string) as track_id,
         lr.rpt,
-        lr.yyyymmdd,
-        CONCAT(CONCAT(lr.year, lr.month), CONCAT('0', l1.day) as dt
+        concat(concat(lr.year_, lr.month_), concat('0', lr.day_)) as dt
     FROM listenraw as lr
 ) t1
 JOIN (
@@ -62,9 +58,8 @@ JOIN (
         OR (style_id = '70103')
         OR (style_id = '70121')
     ) m2
-    ON m1.track_id = m2.track_id
-    WHERE m2.track_id is null
-) t2
+    ON (m1.track_id = m2.track_id)
+    WHERE m2.track_id is null) t2
 ON t1.track_id = t2.track_id
 ;
 
@@ -76,16 +71,13 @@ SELECT
         WHEN rpt > 0.3 THEN 'Y'
         ELSE 'N'
     END as 1min_yn,
-    dt,
-    MAX(yyyymmdd) as yyyymmdd
+    dt
 FROM (
     SELECT
         character_id as character_no,
         track_id,
-        real_play_time,
         rpt,
-        dt,
-        yyyymmdd
+        dt
     FROM listenraw_
     WHERE character_id is not null
     AND track_id is not null
@@ -180,8 +172,7 @@ SELECT
     character_no,
     track_id,
     1min_yn,
-    dt,
-    yyyymmdd
+    dt
 FROM listenpoint
 ORDER BY dt DESC
 ;
@@ -396,13 +387,14 @@ FROM (
                 t1_0.prev_play_t,
                 t1_0.prev_skip_t,
                 t1_1.next_play_t,
+                t1_1.dt,
                 t1_0.unique_listens
             FROM (
                 SELECT
                     character_no,
                     dt,
                     collect_list(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END) as prev_play_t,
-                    slice(collect_list(CASE WHEN 1min_yn = 'N' THEN track_id ELSE null END) as prev_skip_t,
+                    collect_list(CASE WHEN 1min_yn = 'N' THEN track_id ELSE null END) as prev_skip_t,
                     SIZE(collect_set(CASE WHEN 1min_yn = 'Y' THEN track_id ELSE null END)) as unique_listens
                 FROM (
                     SELECT *
@@ -426,7 +418,7 @@ FROM (
     ) t1
     WHERE t1.x_play is not null
     AND t1.y_play is not null)
-WHERE char_cnt < 30
+WHERE char_cnt < 15
 LIMIT 4000000
 );
 

@@ -1,5 +1,5 @@
 setuptools>=42.0.2
-tensorflow-gpu==1.15.0
+tensorflow-gpu==2.7.2
 pyspark==2.4.3
 numpy==1.17.1
 pandas==0.25.1

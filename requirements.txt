@@ -5,7 +5,7 @@ numpy==1.17.1
 pandas==0.25.1
 tqdm==4.35.0
 scipy==1.2.0
-pyarrow==0.13.0
+pyarrow==0.15.1
 PyYAML==5.1.2
 awscli==1.16.309
 boto3==1.9.225
